@@ -1,6 +1,9 @@
 package com.jdbaptista.Office.labor.container;
 
+import com.jdbaptista.Office.AppConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +20,8 @@ public class LaborContainerController {
     }
 
     @PostMapping
-    public void registerLaborContainer(@RequestBody LaborContainer container) {
-        laborContainerService.addNewContainer(container);
+    public String registerLaborContainer(@RequestBody LaborContainer container) {
+        return laborContainerService.addNewContainer(container);
     }
 
     @GetMapping
