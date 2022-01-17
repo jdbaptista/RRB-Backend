@@ -13,13 +13,11 @@ import java.util.Scanner;
 public class MaterialsService {
     private static ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 
-    public String getMaterials() {
+    public File getMaterials() {
         try {
-            File textFile = new File(context.getBean(Office.class).officeConfig.MATERIALS_PATH + "/input.txt");
-            Scanner sc = new Scanner(textFile);
-            return sc.nextLine();
+            return new File(context.getBean(Office.class).officeConfig.MATERIALS_PATH + "/input.txt");
         } catch (Exception e) {
-            return e.toString();
+            return null;
         }
     }
 

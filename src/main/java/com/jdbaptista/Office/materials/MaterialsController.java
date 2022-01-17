@@ -24,7 +24,8 @@ public class MaterialsController {
     }
 
     @GetMapping
-    public String getMaterials() {
-    return service.getMaterials();
+    public File getMaterials() {
+        System.out.println("Get request incoming.");
+        return service.getMaterials();
     }
 }

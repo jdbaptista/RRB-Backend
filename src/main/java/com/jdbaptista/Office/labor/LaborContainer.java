@@ -1,31 +1,22 @@
-package com.jdbaptista.Office.labor.container;
+package com.jdbaptista.Office.labor;
 
 public class LaborContainer {
-    private int id;
     private int day;
     private String name;
     private String task;
     private double time;
-    private int type;
+    private int wcCode;
     private double multiplier;
     private double amount;
     private double wc;
     private double tax;
 
-    public LaborContainer(int day, String name, String task, double time, int type) {
+    public LaborContainer(int day, String name, String task, double time, int wcCode) {
         this.day = day;
         this.name = name;
         this.task = task;
         this.time = time;
-        this.type = type;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+        this.wcCode = wcCode;
     }
 
     public int getDay() {
@@ -84,12 +75,12 @@ public class LaborContainer {
         this.time = time;
     }
 
-    public int getType() {
-        return type;
+    public int getWcCode() {
+        return wcCode;
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public void setWcCode(int wcCode) {
+        this.wcCode = wcCode;
     }
 
     public double getMultiplier() {
