@@ -50,8 +50,8 @@ public class LaborService {
             inFile = new File(context.getBean(Office.class).officeConfig.LABOR_PATH + "/containers.xlsx");
             containers = parseContainers();
         } catch (Exception e) {
-            containers = null;
-            inFile = null;
+            containers = new ArrayList<>();
+            inFile = new File(context.getBean(Office.class).officeConfig.LABOR_PATH + "/containers.xlsx");
             System.out.println("Material containers failed to load because");
             System.out.println("the material containers.xlsx could not be opened.");
         }
@@ -113,31 +113,24 @@ public class LaborService {
 
         Workbook wb = null;
         Sheet sheet = null;
+        Row newRow = null;
         try {
             FileInputStream myxlsx = new FileInputStream(inFile);
             wb = new XSSFWorkbook(myxlsx);
             sheet = wb.getSheetAt(0);
-        } catch (IOException e) {
-            System.out.println("The labor containers.xlsx file is formatted incorrectly.");
-            System.out.println("Check the filepath " + inFile.getAbsolutePath());
+            newRow = sheet.createRow(sheet.getLastRowNum() + 1);
+        } catch (Exception e) {
+            System.out.println("The labor containers.xlsx file is empty, generating new workbook");
+            wb = new XSSFWorkbook();
+            sheet = wb.createSheet();
+            newRow = sheet.createRow(0);
         }
-        Row newRow = sheet.createRow(sheet.getLastRowNum() + 1);
         try {
             int cellNum = 0;
             Cell cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getDay());
-            cell = newRow.createCell(cellNum++);
-            cell.setCellValue(1);
-            cell = newRow.createCell(cellNum++);
-            cell.setCellValue(1);
-            cell = newRow.createCell(cellNum++);
             cell.setCellValue(container.getName());
             cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getTask());
-            cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getTime());
-            cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getWcCode());
+            cell.setCellValue(container.getAddress());
         } catch (Exception e) {
             System.out.println(e);
             return "POST UNSUCCESSFUL\nERROR WRITING TO FILE";
@@ -176,4 +169,14 @@ public class LaborService {
         return null;
     }
 
+    public String[] listReportNames() {
+        String[] files;
+        try {
+            File reportDir = new File(context.getBean(Office.class).officeConfig.LABOR_PATH + "/reports");
+            files = reportDir.list();
+        } catch(Exception e) {
+            throw e;
+        }
+        return files;
+    }
 }

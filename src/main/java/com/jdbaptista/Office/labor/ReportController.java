@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping(path="/api/v1/labor/reports")
@@ -22,6 +23,11 @@ public class ReportController {
     @Autowired
     public ReportController(LaborService service) {
         this.service = service;
+    }
+
+    @GetMapping("/all")
+    public String[] getAllReportFileNames() {
+        return service.listReportNames();
     }
 
     @GetMapping("/downloadFile/{fileName:.+}")
