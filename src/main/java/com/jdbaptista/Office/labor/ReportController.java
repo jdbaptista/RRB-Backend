@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -28,6 +29,11 @@ public class ReportController {
     @GetMapping("/all")
     public String[] getAllReportFileNames() {
         return service.listReportNames();
+    }
+
+    @GetMapping("/generate")
+    public String generateReports() {
+        return service.generateReports();
     }
 
     @GetMapping("/downloadFile/{fileName:.+}")

@@ -2,15 +2,13 @@ package com.jdbaptista.Office.labor;
 
 import com.jdbaptista.Office.AppConfig;
 import com.jdbaptista.Office.*;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -21,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 @Service
@@ -29,7 +28,7 @@ public class LaborService {
     private static ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
     private final Path fileStorageLocation;
 
-    private ArrayList<LaborContainer> containers;
+    private ArrayList<Container> containers;
     private File inFile;
 
     @Autowired
@@ -57,13 +56,12 @@ public class LaborService {
         }
     }
 
-    public ArrayList<LaborContainer> parseContainers() {
-        ArrayList<LaborContainer> ret = new ArrayList<>();
-        int day;
-        int month;
-        int year;
+    public ArrayList<Container> parseContainers() {
+        ArrayList<Container> ret = new ArrayList<>();
         String name;
+        String address;
         String task;
+        Date date;
         int time;
         int wcCode;
 
@@ -84,13 +82,12 @@ public class LaborService {
             Cell cell;
             try {
                 cell = cellIterator.next();
-                day = (int) Double.parseDouble(cell.toString());
-                cell = cellIterator.next();
-                month = (int) Double.parseDouble(cell.toString());
-                cell = cellIterator.next();
-                year = (int) Double.parseDouble(cell.toString());
-                cell = cellIterator.next();
                 name = cell.toString();
+                cell = cellIterator.next();
+                address = cell.toString();
+                cell = cellIterator.next();
+                date = cell.getDateCellValue();
+                System.out.println(date);
                 cell = cellIterator.next();
                 task = cell.toString();
                 cell = cellIterator.next();
@@ -102,19 +99,20 @@ public class LaborService {
                 System.out.println("Something went wrong reading data.");
                 return ret;
             }
-            LaborContainer c = new LaborContainer(day, name, task, time, wcCode);
+            Container c = new Container(name, address, date, task, time, wcCode, 0.0);
             ret.add(c);
         }
         return ret;
     }
 
-    public String addNewContainer(LaborContainer container) {
+    public String addNewContainer(Container container) {
         if (containers.contains(container)) return "POST UNSUCCESSFUL \n CONTAINER ALREADY EXISTS";
 
         Workbook wb = null;
         Sheet sheet = null;
         Row newRow = null;
         try {
+            // input stream is needed bc .create will erase all previous data
             FileInputStream myxlsx = new FileInputStream(inFile);
             wb = new XSSFWorkbook(myxlsx);
             sheet = wb.getSheetAt(0);
@@ -128,9 +126,20 @@ public class LaborService {
         try {
             int cellNum = 0;
             Cell cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getName());
+            cell.setCellValue(container.name());
             cell = newRow.createCell(cellNum++);
-            cell.setCellValue(container.getAddress());
+            cell.setCellValue(container.address());
+            cell = newRow.createCell(cellNum++);
+            cell.setCellValue(container.date());
+            CellStyle dateStyle = wb.createCellStyle();
+            dateStyle.setDataFormat((short) 14);
+            cell.setCellStyle(dateStyle);
+            cell = newRow.createCell(cellNum++);
+            cell.setCellValue(container.task());
+            cell = newRow.createCell(cellNum++);
+            cell.setCellValue(container.time());
+            cell = newRow.createCell(cellNum++);
+            cell.setCellValue(container.wcCode());
         } catch (Exception e) {
             System.out.println(e);
             return "POST UNSUCCESSFUL\nERROR WRITING TO FILE";
@@ -150,7 +159,7 @@ public class LaborService {
         return "POST SUCCESSFUL";
     }
 
-    public ArrayList<LaborContainer> getContainers() {
+    public ArrayList<Container> getContainers() {
         return containers;
     }
 
@@ -178,5 +187,13 @@ public class LaborService {
             throw e;
         }
         return files;
+    }
+
+    public String generateReports() {
+        File configFile = new File(context.getBean(Office.class).officeConfig.LABOR_PATH + "/WCPercentages.xlsx");
+        File salaryFile = new File(context.getBean(Office.class).officeConfig.LABOR_PATH + "/Salaries.xlsx");
+        String outFolder = context.getBean(Office.class).officeConfig.LABOR_PATH + "\\reports";
+        LaborGenerator generator = new LaborGenerator(configFile, salaryFile, outFolder);
+        return generator.run(containers);
     }
 }

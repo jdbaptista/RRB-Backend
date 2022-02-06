@@ -22,13 +22,13 @@ public class LaborController {
     }
 
     @PostMapping
-    public String registerLaborContainer(@RequestBody LaborContainer container) {
+    public String registerLaborContainer(@RequestBody Container container) {
         System.out.println("Post request incoming.");
         return service.addNewContainer(container);
     }
 
     @GetMapping
-    public ArrayList<LaborContainer> getContainer() {
+    public ArrayList<Container> getContainer() {
         System.out.println("Get request incoming.");
         return service.getContainers();
     }

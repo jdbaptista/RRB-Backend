@@ -6,13 +6,15 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.time.ZoneId;
+import java.util.*;
 
+
+/*
+Generates the reports. Uses DumbContainer instead of Container because it was ported from a different,
+WORSE program :( (all in the name of learning though)
+ */
 public class LaborGenerator {
-    final private File inFile;
     final private File configFile;
     final private File salaryFile;
     final private String outFolder;
@@ -21,8 +23,7 @@ public class LaborGenerator {
     final private HashMap<LocalDate, HashMap<Integer, Double>> workComp;
     final private HashMap<LocalDate, HashMap<String, Double>> salaries;
 
-    public LaborGenerator(File inFile, File configFile, File salaryFile, String outFolder) {
-        this.inFile = inFile;
+    public LaborGenerator(File configFile, File salaryFile, String outFolder) {
         this.configFile = configFile;
         this.salaryFile = salaryFile;
         this.outFolder = outFolder;
@@ -33,11 +34,11 @@ public class LaborGenerator {
 
     }
 
-    public String run() {
+    public String run(ArrayList<Container> containers) {
         try {
             getWorkComp();
             getSalaries();
-            parseData();
+            parseData(containers);
             calculate();
             generateFile();
         } catch (Exception e) {
@@ -142,83 +143,23 @@ public class LaborGenerator {
         log += "Reports generated successfully.";
     }
 
-    private void parseData() {
-        String nameCell;
-        String addressCell;
-        String dateCell;
-        String taskCell;
-        double timeCell;
-        int classCell;
-        String multiplierCell;
-
-        // try to open the input file.
-        Workbook wb;
-        Sheet sheet = null;
-        try {
-            wb = WorkbookFactory.create(inFile);
-            sheet = wb.getSheetAt(0);
-        } catch (IOException e) {
-            log += "Something went wrong reading the input.\n";
-            e.printStackTrace();
+    private void parseData(ArrayList<Container> containers) throws Exception {
+        for (Container c : containers) {
+            inputContainer(c.name(), c.address(), c.date(), c.task(), c.time(), c.wcCode(), "0");
         }
 
-        // try to read the data.
-        assert sheet != null;
-        for (Row row : sheet) {
-            Iterator<Cell> cellIterator = row.cellIterator();
-            Cell cell;
-            try {
-                cell = cellIterator.next();
-                nameCell = cell.toString();
-                cell = cellIterator.next();
-                addressCell = cell.toString();
-                cell = cellIterator.next();
-                dateCell = cell.toString();
-                cell = cellIterator.next();
-                taskCell = cell.toString();
-                cell = cellIterator.next();
-                timeCell = Double.parseDouble(cell.toString());
-                cell = cellIterator.next();
-                classCell = (int) Double.parseDouble(cell.toString());
-                if (cellIterator.hasNext()) {
-                    cell = cellIterator.next();
-                    multiplierCell = cell.toString();
-                } else {
-                    multiplierCell = "";
-                }
-            } catch (Exception e) {
-                log += "Something went wrong reading the daily tasks at row " + (row.getRowNum() + 1) + ". Skipped this row.\n";
-                continue;
-            }
-            if (nameCell == null || addressCell == null || dateCell == null || taskCell == null || timeCell == -1 || classCell == -1) {
-                log += "Row" + row.getRowNum() + " is not formatted correctly.";
-                return;
-            }
-
-            // try to input the row.
-            try {
-                inputContainer(nameCell, addressCell, dateCell, taskCell, timeCell, classCell, multiplierCell);
-            } catch (Exception e) {
-                log += e + "\n";
-                return;
-            }
-        }
     }
 
-    private void inputContainer(String name, String address, String date, String task, double time, int type, String multiplier) throws Exception {
+    private void inputContainer(String name, String address, Date date, String task, double time, int type, String multiplier) throws Exception {
         // parse the raw date into usable data.
         // raw date in form 01-Mar-2021.
         int day;
-        String month;
+        int month;
         int year;
-        try {
-            String[] splitDate = date.split("-");
-            day = Integer.parseInt(splitDate[0]);
-            month = splitDate[1];
-            year = Integer.parseInt(splitDate[2]);
-        } catch (Exception e) {
-            throw new Exception("Date is not formatted correctly.");
-        }
+        LocalDate local = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        day = local.getDayOfMonth();
+        month = local.getMonthValue() + 1;
+        year = local.getYear();
 
         // add new job to jobs list.
         Job newJob = new Job(address);
@@ -245,8 +186,8 @@ public class LaborGenerator {
         } else {
             doubleMultiplier = Double.parseDouble(multiplier);
         }
-        Container newContainer = new Container(day, name, task, time, type, doubleMultiplier);
-        Container containerRef = monthRef.getContainerRef(newContainer);
+        DumbContainer newContainer = new DumbContainer(day, name, task, time, type, doubleMultiplier);
+        DumbContainer containerRef = monthRef.getContainerRef(newContainer);
         if (containerRef == null) {
             containerRef = newContainer;
             monthRef.addContainer(containerRef);
@@ -266,7 +207,7 @@ public class LaborGenerator {
     private void calculate() {
         for (Job job : jobs.keySet()) {
             for (Month month : job.getMonths()) {
-                for (Container container : month.getContainers()) {
+                for (DumbContainer container : month.getContainers()) {
                     container.amount = calculatePay(container, month.getMonth(), container.day, month.getYear());
                     container.wc = calculateWC(container, month.getMonth(), container.day, month.getYear());
                     container.tax = calculateTax(container);
@@ -324,7 +265,7 @@ public class LaborGenerator {
         salaries.put(LocalDate.of(year, intMonth, day), types);
     }
 
-    private double calculateWC(Container container, int month, int day, int year) {
+    private double calculateWC(DumbContainer container, int month, int day, int year) {
         LocalDate date = LocalDate.of(year, month, day);
         LocalDate holdDate = null;
         ArrayList<LocalDate> dateChanges = new ArrayList<>(workComp.keySet());
@@ -338,7 +279,7 @@ public class LaborGenerator {
         return ((int) Math.round(container.amount * workComp.get(holdDate).get(container.type))) / 100d;
     }
 
-    private double calculatePay(Container container, int month, int day, int year) {
+    private double calculatePay(DumbContainer container, int month, int day, int year) {
         LocalDate date = LocalDate.of(year, month, day);
         LocalDate holdDate = null;
         ArrayList<LocalDate> dateChanges = new ArrayList<>(salaries.keySet());
@@ -352,7 +293,7 @@ public class LaborGenerator {
         return ((int) Math.round(container.multiplier * container.time * salaries.get(holdDate).get(container.name) * 100)) / 100d;
     }
 
-    private double calculateTax(Container container) {
+    private double calculateTax(DumbContainer container) {
         return ((int) Math.round(container.amount * 7.7)) / 100d;
     }
 

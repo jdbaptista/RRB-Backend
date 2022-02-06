@@ -8,14 +8,14 @@ public class Month {
     final private int month;
     final private int year;
     final public String strMonth;
-    final private ArrayList<Container> containers;
+    final private ArrayList<DumbContainer> containers;
     public HashMap<Integer, double[]> dailyTotals;
     public HashMap<String, HashMap<String, double[]>> taskTotals;
 
 
-    public Month(String month, int year) {
-        this.strMonth = month;
-        this.month = LaborGenerator.convertMonth(month);
+    public Month(int month, int year) {
+        this.strMonth = Month.convertMonth(month);
+        this.month = month;
         this.year = year;
         containers = new ArrayList<>();
         dailyTotals = new HashMap<>();
@@ -23,7 +23,7 @@ public class Month {
     }
 
     public void calculateDailyTotals() {
-        for (Container container : containers) {
+        for (DumbContainer container : containers) {
             if (!dailyTotals.containsKey(container.day)) {
                 double[] containerTotals = {container.amount, container.time, container.wc, container.tax};
                 dailyTotals.put(container.day, containerTotals);
@@ -52,7 +52,7 @@ public class Month {
     }
 
     public void calculateTaskTotals() {
-        for (Container container : containers) {
+        for (DumbContainer container : containers) {
             if (!taskTotals.containsKey(container.task)) {
                 HashMap<String, double[]> workerTotal = new HashMap<>();
                 double[] cellFormatted = {container.time, container.getTotal()};
@@ -84,17 +84,17 @@ public class Month {
         }
     }
 
-    public void addContainer(Container container) {
+    public void addContainer(DumbContainer container) {
         containers.add(container);
     }
 
-    public ArrayList<Container> getContainers() {
+    public ArrayList<DumbContainer> getContainers() {
         return containers;
     }
 
-    public Container getContainerRef(Container query) {
+    public DumbContainer getContainerRef(DumbContainer query) {
         if (!containers.contains(query)) return null;
-        for (Container container : containers) {
+        for (DumbContainer container : containers) {
             if (container.equals(query)) {
                 return container;
             }
@@ -126,5 +126,49 @@ public class Month {
     @Override
     public int hashCode() {
         return Objects.hash(month, year);
+    }
+
+    public static String convertMonth(int month) {
+        switch (month) {
+            case 1 -> {
+                return "Jan";
+            }
+            case 2 -> {
+                return "Feb";
+            }
+            case 3 -> {
+                return "Mar";
+            }
+            case 4 -> {
+                return "Apr";
+            }
+            case 5 -> {
+                return "May";
+            }
+            case 6 -> {
+                return "Jun";
+            }
+            case 7 -> {
+                return "Jul";
+            }
+            case 8 -> {
+                return "Aug";
+            }
+            case 9 -> {
+                return "Sep";
+            }
+            case 10 -> {
+                return "Oct";
+            }
+            case 11 -> {
+                return "Nov";
+            }
+            case 12 -> {
+                return "Dec";
+            }
+            default -> {
+                return "";
+            }
+        }
     }
 }

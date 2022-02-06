@@ -73,12 +73,12 @@ public class Formatter {
     }
 
     private void writeDays(Month month, Sheet sheet) {
-        ArrayList<Container> containers = month.getContainers();
+        ArrayList<DumbContainer> containers = month.getContainers();
         if (containers.size() == 0)
             return;
         int day = containers.get(0).day;
         writeDayLabels(sheet);
-        for (Container container : containers) {
+        for (DumbContainer container : containers) {
             if (container.day != day) {
                 writeDayTotal(month, day, sheet);
                 day = container.day;
@@ -111,7 +111,7 @@ public class Formatter {
         cell.setCellStyle(styles.get("LABEL"));
     }
 
-    private void writeDay(Container container, Sheet sheet) {
+    private void writeDay(DumbContainer container, Sheet sheet) {
         cellNum = 0;
         Row row = sheet.createRow(rowNum++);
         Cell cell = row.createCell(cellNum++);
