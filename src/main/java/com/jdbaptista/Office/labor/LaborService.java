@@ -99,7 +99,7 @@ public class LaborService {
                 System.out.println("Something went wrong reading data.");
                 return ret;
             }
-            Container c = new Container(name, address, date, task, time, wcCode, 0.0);
+            Container c = new Container(name, address, date, task, time, wcCode, 1.0);
             ret.add(c);
         }
         return ret;

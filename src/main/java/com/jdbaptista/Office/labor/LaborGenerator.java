@@ -38,7 +38,7 @@ public class LaborGenerator {
         try {
             getWorkComp();
             getSalaries();
-            parseData(containers);
+            parseJSONData(containers);
             calculate();
             generateFile();
         } catch (Exception e) {
@@ -143,23 +143,45 @@ public class LaborGenerator {
         log += "Reports generated successfully.";
     }
 
-    private void parseData(ArrayList<Container> containers) throws Exception {
+    private void parseXLSXData(ArrayList<Container> containers) throws Exception {
         for (Container c : containers) {
-            inputContainer(c.name(), c.address(), c.date(), c.task(), c.time(), c.wcCode(), "0");
+            inputContainer(c.name(), c.address(), parseXLSXDate(c.date()), c.task(), c.time(), c.wcCode(), String.valueOf(c.multiplier()));
         }
-
     }
 
-    private void inputContainer(String name, String address, Date date, String task, double time, int type, String multiplier) throws Exception {
-        // parse the raw date into usable data.
-        // raw date in form 01-Mar-2021.
-        int day;
-        int month;
-        int year;
+    private void parseJSONData(ArrayList<Container> containers) throws Exception {
+        for (Container c : containers) {
+            inputContainer(c.name(), c.address(), parseJSONDate(c.date()), c.task(), c.time(), c.wcCode(), String.valueOf(c.multiplier()));
+        }
+    }
+
+    private int[] parseXLSXDate(Date date) {
+        int day, month, year;
         LocalDate local = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         day = local.getDayOfMonth();
         month = local.getMonthValue() + 1;
         year = local.getYear();
+        return new int[] {day, month, year};
+    }
+
+    private int[] parseJSONDate(Date date) {
+        int day, month, year;
+        String strDate = date.toString();
+        System.out.println(strDate);
+        String[] parts = strDate.split(" ");
+        day = Integer.parseInt(parts[2]);
+        month = convertMonth(parts[1]);
+        year = Integer.parseInt(parts[5]);
+        return new int[] {day, month, year};
+    }
+
+    private void inputContainer(String name, String address, int[] date, String task, double time, int type, String multiplier) throws Exception {
+        // parse the raw date into usable data.
+        // raw date in form 01-Mar-2021 for XLSX and Sun Oct 10 00:00:00 PDT 2021 for JSON.
+        int day, month, year;
+        day = date[0];
+        month = date[1];
+        year = date[2];
 
         // add new job to jobs list.
         Job newJob = new Job(address);
